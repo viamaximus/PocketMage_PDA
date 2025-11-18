@@ -115,7 +115,7 @@ jobs:
             --argjson part_off "$PARTITIONS_OFFSET_DEC" \
             --argjson app_off "$APP0_OFFSET_DEC" \
             '{
-              name: "PocketMage Full Install",
+              name: "PocketMage OS",
               version: $ver,
               home_assistant_domain: "",
               new_install_prompt_erase: true,
@@ -147,7 +147,7 @@ jobs:
             --arg ver "$RELEASE_TAG" \
             --argjson app_off "$APP0_OFFSET_DEC" \
             '{
-              name: "PocketMage Update (Preserve Data)",
+              name: "PocketMage OS",
               version: $ver,
               home_assistant_domain: "",
               new_install_prompt_erase: false,
