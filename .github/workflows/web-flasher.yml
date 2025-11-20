@@ -1,4 +1,4 @@
-name: Build & publish web flasher assets
+name: Conjure & Publish the Web Flasher Grimoire
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   id-token: write
 
 jobs:
-  build_and_deploy:
+  weave_and_deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,26 +25,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Prepare Python
+      - name: Prepare the Python Cauldron
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install PlatformIO + esptool + jq
+      - name: Summon PlatformIO, esptool & jq
         run: |
           set -euo pipefail
           pip install -U platformio esptool
           sudo apt-get update
           sudo apt-get install -y jq
 
-      - name: Build firmware
+      - name: Forge the PocketMage Firmware
         run: |
           set -euo pipefail
           pio run -e PM_V3
           echo "Build directory contents:"
           ls -lh .pio/build/PM_V3/*.bin
 
-      - name: Extract partition offsets
+      - name: Divine Partition Offsets
         id: offsets
         run: |
           set -euo pipefail
@@ -62,7 +62,7 @@ jobs:
           echo "  Partitions: $PARTITIONS_OFFSET"
           echo "  App0: $APP0_OFFSET"
 
-      - name: Determine flash parameters from board config
+      - name: Determine the Flash Sigils (parameters)
         id: flash_params
         run: |
           set -euo pipefail
@@ -79,7 +79,7 @@ jobs:
           
           echo "Flash parameters: mode=$FLASH_MODE freq=$FLASH_FREQ size=$FLASH_SIZE"
 
-      - name: Prepare firmware manifest
+      - name: Scribe the Firmware Manifest
         run: |
           set -euo pipefail
           RELEASE_TAG="${{ github.event.release.tag_name }}"
@@ -154,18 +154,18 @@ jobs:
           
           echo "Updated manifest-index.json with version: $RELEASE_TAG"
 
-      - name: Copy web flasher interface
+      - name: Copy the Web Flasher Shrine (interface)
         run: |
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/docs"
-          cp "$GITHUB_WORKSPACE/.github/index.html" "$GITHUB_WORKSPACE/docs/index.html"
-          cp "$GITHUB_WORKSPACE/.github/logo.png" "$GITHUB_WORKSPACE/docs/logo.png"
+          cp "$GITHUB_WORKSPACE/Code/WebFlasher/index.html" "$GITHUB_WORKSPACE/docs/index.html"
+          cp "$GITHUB_WORKSPACE/Code/WebFlasher/logo.png" "$GITHUB_WORKSPACE/docs/logo.png"
           echo "Copied web flasher interface"
 
-      - name: Upload to GitHub Pages
+      - name: Upload to Pages Reliquary
         uses: actions/upload-pages-artifact@v4
         with:
           path: docs
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy the Grimoire to GitHub Pages
         uses: actions/deploy-pages@v4
