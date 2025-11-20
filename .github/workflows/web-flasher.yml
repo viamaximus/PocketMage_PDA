@@ -182,19 +182,27 @@ jobs:
 
           echo "Updated manifest-index.json with version: $RELEASE_TAG"
 
-      - name: Write deploy-info for Pages
+      - name: Write the Deploy Info Scroll
         run: |
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/docs"
-          cat > "$GITHUB_WORKSPACE/docs/deploy-info.json" <<'EOF'
-          {
-            "release_tag": "${RELEASE_TAG}",
-            "run_id": "${GITHUB_RUN_ID}",
-            "run_number": "${GITHUB_RUN_NUMBER}",
-            "sha": "${GITHUB_SHA}",
-            "timestamp": "$(date --utc +%Y-%m-%dT%H:%M:%SZ)"
-          }
-          EOF
+
+          # prefer release tag when available; fall back to dev timestamp
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Not a release event; using dev timestamp for release_tag"
+            RELEASE_TAG="dev-$(date +%Y%m%d-%H%M%S)"
+          fi
+
+          jq -n \
+            --arg release_tag "$RELEASE_TAG" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg run_number "$GITHUB_RUN_NUMBER" \
+            --arg sha "$GITHUB_SHA" \
+            --arg timestamp "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
+            '{release_tag: $release_tag, run_id: $run_id, run_number: $run_number, sha: $sha, timestamp: $timestamp}' \
+            > "$GITHUB_WORKSPACE/docs/deploy-info.json"
+
           echo "Wrote deploy-info.json:"
           cat "$GITHUB_WORKSPACE/docs/deploy-info.json"
 
