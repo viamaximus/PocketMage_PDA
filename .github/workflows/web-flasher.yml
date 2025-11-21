@@ -227,19 +227,19 @@ jobs:
           if git clone --depth=1 --branch gh-pages "$REPO_URL" "$TMP_DIR" 2>/dev/null; then
             echo "gh-pages branch cloned to $TMP_DIR"
             
-            # List what's actually in gh-pages
-            echo "Contents of gh-pages docs/firmware:"
-            ls -la "$TMP_DIR/docs/firmware/" || echo "  (directory does not exist)"
+            # List what's actually in gh-pages (peaceiris deploys to root, not docs/)
+            echo "Contents of gh-pages firmware:"
+            ls -la "$TMP_DIR/firmware/" || echo "  (directory does not exist)"
             
             # Ensure workspace docs firmware directory exists
             mkdir -p "$GITHUB_WORKSPACE/docs/firmware"
 
             # Copy existing release (non-dev-) firmware directories into workspace docs/firmware
-            if [ -d "$TMP_DIR/docs/firmware" ]; then
+            if [ -d "$TMP_DIR/firmware" ]; then
               echo "Copying release firmware directories from gh-pages into workspace docs/firmware..."
               # Only copy directories that do NOT start with dev-
-              if ls -d "$TMP_DIR/docs/firmware"/*/ 2>/dev/null | grep -v '/dev-' > /dev/null; then
-                find "$TMP_DIR/docs/firmware" -maxdepth 1 -mindepth 1 -type d ! -name 'dev-*' -print0 | while IFS= read -r -d '' dir; do
+              if ls -d "$TMP_DIR/firmware"/*/ 2>/dev/null | grep -v '/dev-' > /dev/null; then
+                find "$TMP_DIR/firmware" -maxdepth 1 -mindepth 1 -type d ! -name 'dev-*' -print0 | while IFS= read -r -d '' dir; do
                   base=$(basename "$dir")
                   echo "  copying release dir: $base"
                   # preserve existing release directories; overwrite if same name
@@ -252,7 +252,7 @@ jobs:
 
               echo "Identifying the newest $KEEP_DEV_COUNT dev-* versions from gh-pages..."
               # Get all dev dirs from gh-pages, sort them (lexicographically newest last), keep last N
-              mapfile -t old_dev_dirs < <(find "$TMP_DIR/docs/firmware" -maxdepth 1 -mindepth 1 -type d -name 'dev-*' -printf '%f\n' | sort)
+              mapfile -t old_dev_dirs < <(find "$TMP_DIR/firmware" -maxdepth 1 -mindepth 1 -type d -name 'dev-*' -printf '%f\n' | sort)
               old_dev_count=${#old_dev_dirs[@]}
               
               # Get current version to exclude it from the copy (it's already in workspace)
@@ -273,7 +273,7 @@ jobs:
                   if [ "$dev_name" != "$CURRENT_VERSION" ]; then
                     echo "  copying dev dir: $dev_name"
                     rm -rf "$GITHUB_WORKSPACE/docs/firmware/$dev_name" || true
-                    cp -a "$TMP_DIR/docs/firmware/$dev_name" "$GITHUB_WORKSPACE/docs/firmware/$dev_name"
+                    cp -a "$TMP_DIR/firmware/$dev_name" "$GITHUB_WORKSPACE/docs/firmware/$dev_name"
                   else
                     echo "  skipping current version (already in workspace): $dev_name"
                   fi
@@ -311,14 +311,6 @@ jobs:
             
             echo "Rebuilt manifest-index.json:"
             cat "$GITHUB_WORKSPACE/docs/manifest-index.json"
-
-            # Copy any other desired static assets from gh-pages that are not transient (optional)
-            for f in index.html logo.png favicon.png deploy-info.json; do
-              if [ ! -f "$GITHUB_WORKSPACE/docs/$f" ] && [ -f "$TMP_DIR/docs/$f" ]; then
-                echo "Preserving existing $f from gh-pages"
-                cp -a "$TMP_DIR/docs/$f" "$GITHUB_WORKSPACE/docs/$f"
-              fi
-            done
 
           else
             echo "No gh-pages branch present (or clone failed); nothing to preserve."
