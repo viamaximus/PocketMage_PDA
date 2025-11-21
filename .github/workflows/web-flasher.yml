@@ -85,17 +85,27 @@ jobs:
           
           echo "Flash parameters: mode=$FLASH_MODE freq=$FLASH_FREQ size=$FLASH_SIZE"
 
-      - name: Scribe the Firmware Manifest
+      - name: Determine Version Tag
+        id: version
         run: |
           set -euo pipefail
-
+          
           # Retrieve release tag (empty when not triggered by release event)
           RELEASE_TAG="${{ github.event.release.tag_name }}"
-
+          
           # Use timestamped dev version for non-release builds
           if [ -z "$RELEASE_TAG" ]; then
             RELEASE_TAG="dev-$(date +%Y%m%d-%H%M%S)"
           fi
+          
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "Determined version: $RELEASE_TAG"
+
+      - name: Scribe the Firmware Manifest
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG="${{ steps.version.outputs.release_tag }}"
 
           BUILD_DIR="$GITHUB_WORKSPACE/Code/PocketMage_V3/.pio/build/PM_V3"
           TARGET_DIR="$GITHUB_WORKSPACE/docs/firmware/${RELEASE_TAG}"
@@ -191,12 +201,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/docs"
 
-          # prefer release tag when available; fall back to dev timestamp
-          RELEASE_TAG="${{ github.event.release.tag_name }}"
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "Not a release event; using dev timestamp for release_tag"
-            RELEASE_TAG="dev-$(date +%Y%m%d-%H%M%S)"
-          fi
+          RELEASE_TAG="${{ steps.version.outputs.release_tag }}"
 
           jq -n \
             --arg release_tag "$RELEASE_TAG" \
@@ -261,10 +266,7 @@ jobs:
             fi
 
             # Now handle the new version (current build) - if it's a dev version, we need to make room
-            CURRENT_VERSION="${{ github.event.release.tag_name }}"
-            if [ -z "$CURRENT_VERSION" ]; then
-              CURRENT_VERSION="dev-$(date +%Y%m%d-%H%M%S)"
-            fi
+            CURRENT_VERSION="${{ steps.version.outputs.release_tag }}"
             
             if [[ "$CURRENT_VERSION" == dev-* ]]; then
               echo "Current build is a dev version ($CURRENT_VERSION), will ensure only $KEEP_DEV_COUNT total dev versions exist"
